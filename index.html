@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Signature</title>
+  <style>
+    .form-container {
+      margin: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .signature-box {
+      width: 400px;
+      height: 200px;
+      border: 1px solid black;
+      margin-top: 20px;
+      position: relative;
+    }
+    canvas {
+      cursor: crosshair;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container" id="formContainer">
+    <h1>Form with Live Signature</h1>
+    <form>
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name"><br><br>
+      
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email"><br><br>
+      
+      <div class="signature-box" id="signatureBox">
+        <canvas id="signatureCanvas"></canvas>
+      </div>
+      <button type="button" onclick="clearSignature()">Clear Signature</button>
+    </form>
+  </div>
+  <button onclick="generatePDF()">Download as PDF</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.6/dist/signature_pad.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>
+    // Initialize Signature Pad
+    const canvas = document.getElementById("signatureCanvas");
+    const signatureBox = document.getElementById("signatureBox");
+    const signaturePad = new SignaturePad(canvas);
+
+    // Resize canvas to fit the signature box
+    function resizeCanvas() {
+      canvas.width = signatureBox.offsetWidth;
+      canvas.height = signatureBox.offsetHeight;
+      signaturePad.clear();
+    }
+    resizeCanvas();
+
+    // Clear Signature Functionality
+    function clearSignature() {
+      signaturePad.clear();
+    }
+
+    // Generate PDF
+    async function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const formElement = document.getElementById("formContainer");
+
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      // Convert Form to PDF
+      const canvasImage = await html2canvas(formElement);
+      const imgData = canvasImage.toDataURL("image/png");
+
+      const imgWidth = 190; // A4 width (210mm - margins)
+      const imgHeight = canvasImage.height * imgWidth / canvasImage.width;
+
+      pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+
+      // Add Signature to PDF
+      if (!signaturePad.isEmpty()) {
+        const signatureData = signaturePad.toDataURL("image/png");
+        pdf.addImage(signatureData, "PNG", 50, imgHeight + 20, 100, 50); // Position the signature on the PDF
+      } else {
+        alert("Please add a signature before downloading the PDF.");
+      }
+
+      // Save PDF
+      pdf.save("form_with_signature.pdf");
+    }
+  </script>
+</body>
+</html>
